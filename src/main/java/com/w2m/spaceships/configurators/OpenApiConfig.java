@@ -3,6 +3,8 @@ package com.w2m.spaceships.configurators;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -18,7 +20,15 @@ public class OpenApiConfig implements WebMvcConfigurer {
                         .title("Spaceship API")
                         .description("API for CRUD maintenance of spacecraft")
                         .version("1.0")
-                        .license(new License().name("Apache 2.0").url("http://springdoc.org")));
+                        .license(new License().name("Apache 2.0").url("http://springdoc.org")))
+                .components(new io.swagger.v3.oas.models.Components()
+                        .addSecuritySchemes("bearer-jwt", new SecurityScheme()
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")
+                                .in(io.swagger.v3.oas.models.security.SecurityScheme.In.HEADER)
+                                .name("Authorization")))
+                .addSecurityItem(new SecurityRequirement().addList("bearer-jwt", "bearer-jwt"));
     }
 
     @Override

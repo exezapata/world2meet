@@ -1,5 +1,6 @@
 package com.w2m.spaceships.services;
 
+import com.w2m.spaceships.exceptions.ResourceNotFoundException;
 import com.w2m.spaceships.models.User;
 import com.w2m.spaceships.models.UserMain;
 import com.w2m.spaceships.repositories.UserRepository;
@@ -18,9 +19,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String username) throws ResourceNotFoundException {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         return new UserMain(user);
     }
 

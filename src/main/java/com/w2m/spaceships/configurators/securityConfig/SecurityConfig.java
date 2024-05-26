@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,12 +20,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.bind.annotation.CrossOrigin;
 
 
 @Configuration
 @EnableWebSecurity
-@CrossOrigin
 @EnableMethodSecurity
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class SecurityConfig {
@@ -61,11 +58,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
-                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/swagger-ui.html", "/webjars/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
-                        .requestMatchers("/api/auth/register", "/api/auth/login")
+                        .requestMatchers("/api/auth/**")
                         .permitAll()// Permit all requests to certain URLs
                         .anyRequest().authenticated()) // Require authentication for all other requests
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

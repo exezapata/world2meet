@@ -1,9 +1,13 @@
 package com.w2m.spaceships.controllers;
 
-import com.w2m.spaceships.models.User;
+import com.w2m.spaceships.dtos.UserDto;
+import com.w2m.spaceships.exceptions.AuthenticationException;
+import com.w2m.spaceships.models.Role;
+import com.w2m.spaceships.repositories.RoleRepository;
 import com.w2m.spaceships.services.JwtService;
 import com.w2m.spaceships.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "/api/auth")
@@ -29,18 +34,18 @@ public class AuthenticationController {
 
     @Operation(summary = "Register a user")
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody User user) {
+    public ResponseEntity<String> registerUser(@Valid @RequestBody UserDto userDto) {
         try {
-            userService.addUser(user);
+            userService.addUser(userDto);
             return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error registering user: " + e.getMessage());
         }
     }
 
     @Operation(summary = "Login a user")
     @PostMapping("/login")
-    public ResponseEntity<?> createAuthenticationToken(@RequestBody User authenticationRequest) throws Exception {
+    public ResponseEntity<?> createAuthenticationToken(@RequestBody UserDto authenticationRequest) throws Exception {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword())
@@ -53,7 +58,8 @@ public class AuthenticationController {
             return ResponseEntity.ok(token);
 
         } catch (BadCredentialsException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect username or password");
+            throw new AuthenticationException("Incorrect username or password");
         }
     }
+
 }

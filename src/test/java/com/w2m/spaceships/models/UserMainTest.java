@@ -14,12 +14,17 @@ class UserMainTest {
 
     private User user;
     private UserMain userMain;
+    private Role role;
 
     @BeforeEach
     public void setUp() {
+
+        role = Role.builder().id(1L).name("ADMIN").build();
+
         user = new User();
         user.setUsername("username");
         user.setPassword("password");
+        user.setRoles(Set.of(role));
 
         userMain = new UserMain(user);
     }
@@ -39,7 +44,7 @@ class UserMainTest {
         Set<SimpleGrantedAuthority> authorities = (Set<SimpleGrantedAuthority>) userMain.getAuthorities();
 
         assertEquals(1, authorities.size());
-        assertTrue(authorities.contains(new SimpleGrantedAuthority("USER")));
+        assertTrue(authorities.contains(new SimpleGrantedAuthority("ADMIN")));
     }
 
     @Test

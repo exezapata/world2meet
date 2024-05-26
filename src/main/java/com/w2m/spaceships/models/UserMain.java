@@ -5,19 +5,22 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class UserMain implements UserDetails {
 
-    String userName;
-    String password;
-    Set<SimpleGrantedAuthority> authorities;
+    private String userName;
+    private String password;
+
+    private Set<SimpleGrantedAuthority> authorities;
 
     public UserMain(User user) {
         userName = user.getUsername();
         password = user.getPassword();
-        authorities = Collections.singleton(new SimpleGrantedAuthority("USER"));
+        authorities = user.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.getName()))
+                .collect(Collectors.toSet());
     }
 
     @Override

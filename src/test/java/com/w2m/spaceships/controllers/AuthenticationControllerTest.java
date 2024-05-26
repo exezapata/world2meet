@@ -1,5 +1,8 @@
 package com.w2m.spaceships.controllers;
 
+import com.w2m.spaceships.dtos.UserDto;
+import com.w2m.spaceships.exceptions.AuthenticationException;
+import com.w2m.spaceships.exceptions.ResourceNotFoundException;
 import com.w2m.spaceships.models.User;
 import com.w2m.spaceships.repositories.UserRepository;
 import com.w2m.spaceships.services.JwtService;
@@ -16,7 +19,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,7 +29,6 @@ import static org.mockito.Mockito.when;
 
 @WebMvcTest(AuthenticationController.class)
 @ActiveProfiles("test")
-@WithMockUser
 class AuthenticationControllerTest {
 
     @Autowired
@@ -50,10 +51,16 @@ class AuthenticationControllerTest {
     @MockBean
     private AuthenticationManager authenticationManager;
 
+    private UserDto userDto;
+
     private User user;
 
     @BeforeEach
     void setUp() {
+        userDto = new UserDto();
+        userDto.setUsername("username");
+        userDto.setPassword("password");
+
         user = new User();
         user.setUsername("username");
         user.setPassword("password");
@@ -62,9 +69,9 @@ class AuthenticationControllerTest {
     @Test
     void testRegisterUser_ValidUser_ReturnsCreated() {
 
-        when(userService.addUser(user)).thenReturn(user);
+        when(userService.addUser(userDto)).thenReturn(user);
 
-        ResponseEntity<String> response = authenticationController.registerUser(user);
+        ResponseEntity<String> response = authenticationController.registerUser(userDto);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals("User registered successfully", response.getBody());
@@ -73,12 +80,16 @@ class AuthenticationControllerTest {
     @Test
     void testRegisterUser_UserServiceThrowsException_ReturnsInternalServerError() {
 
-        when(userService.addUser(user)).thenThrow(new RuntimeException("User already exists"));
+        UserDto existingUser = new UserDto();
+        existingUser.setUsername("existingUser");
 
-        ResponseEntity<String> response = authenticationController.registerUser(user);
+        when(userService.addUser(existingUser)).thenThrow(new ResourceNotFoundException("Username already exists: " + existingUser.getUsername()));
+
+        ResponseEntity<String> response = authenticationController.registerUser(existingUser);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertTrue(response.getBody().contains("Error registering user"));
+        assertTrue(response.getBody().contains("Error registering user: Username already exists: " + existingUser.getUsername()));
+
     }
 
     @Test
@@ -88,9 +99,9 @@ class AuthenticationControllerTest {
 
         when(authenticationManager.authenticate(any())).thenReturn(authentication);
 
-        when(jwtService.generateToken(user.getUsername())).thenReturn("test_token");
+        when(jwtService.generateToken(userDto.getUsername())).thenReturn("test_token");
 
-        ResponseEntity<?> response = authenticationController.createAuthenticationToken(user);
+        ResponseEntity<?> response = authenticationController.createAuthenticationToken(userDto);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("test_token", response.getBody());
@@ -101,9 +112,10 @@ class AuthenticationControllerTest {
 
         when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Invalid credentials"));
 
-        ResponseEntity<?> response = authenticationController.createAuthenticationToken(user);
+        AuthenticationException thrown = assertThrows(AuthenticationException.class, () -> {
+            authenticationController.createAuthenticationToken(userDto);
+        });
 
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("Incorrect username or password"));
+        assertEquals("Incorrect username or password", thrown.getMessage());
     }
 }

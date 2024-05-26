@@ -38,6 +38,32 @@ To execute the tests, run the following Maven command:
    ```
 ## Instructions for Use
 
+There are 2 types of ROLES created to associate with user creation:
+
+ROLE_ADMIN :
+```json
+{
+   "id": 1,
+   "name":"ROLE_ADMIN"
+}
+```
+
+ROLE_USER :
+```json
+{
+   "id": 2,
+   "name":"ROLE_USER"
+}
+```
+
+### Steps to follow
+
+1 - Create user - http://localhost:8080/api/auth/register
+
+2 - Get token for the user created above - http://localhost:8080/api/auth/login
+
+3 - Before consulting the spaceship endpoints, the token obtained in step number 2, Bearer Token, must be added and then consult the endpoint. - Example : http://localhost:8080/api/spaceship/spaceships?page=0&size=10
+
 ### Authentication
 
 Before using ship-related endpoints, follow these steps:
@@ -46,8 +72,14 @@ Before using ship-related endpoints, follow these steps:
 Before you begin, create a user using the following JSON format:
 ```json
 {
-    "username": "admin",
-    "password": "12345"
+   "username": "admin",
+   "password": "12345",
+   "roles": [
+      {
+         "id": 1,
+         "name":"ROLE_ADMIN"
+      }
+   ]
 }
 ```
 Login:

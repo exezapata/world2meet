@@ -1,50 +1,60 @@
 package com.w2m.spaceships.controllers;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.w2m.spaceships.dtos.SpaceshipDto;
+
 import com.w2m.spaceships.exceptions.ResourceNotFoundException;
-import com.w2m.spaceships.models.Spaceship;
+import com.w2m.spaceships.filters.JwtFilter;
 import com.w2m.spaceships.repositories.SpaceshipRepository;
+
 import com.w2m.spaceships.services.JwtService;
 import com.w2m.spaceships.services.SpaceshipService;
+
 import com.w2m.spaceships.services.UserDetailsServiceImpl;
+import jakarta.servlet.ServletException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.test.context.TestSecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import org.springframework.web.server.ResponseStatusException;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 
 
-@WebMvcTest(SpaceshipController.class)
+
+
+@SpringBootTest
 @ActiveProfiles("test")
-@WithMockUser
 class SpaceshipControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
     @Autowired
     private SpaceshipController spaceshipController;
@@ -52,7 +62,10 @@ class SpaceshipControllerTest {
     private SpaceshipService spaceshipService;
 
     @MockBean
-    private JwtService JwtTokenUtil;
+    private JwtService jwtService;
+
+    @MockBean
+    private JwtFilter jwtFilter;
 
     @MockBean
     private UserDetailsServiceImpl userDetailsService;
@@ -60,169 +73,255 @@ class SpaceshipControllerTest {
     @MockBean
     private SpaceshipRepository spaceshipRepository;
 
-    private Spaceship spaceship;
-    private List<Spaceship> spaceshipList;
-    private Pageable pageable;
-    private ObjectMapper objectMapper;
+    @MockBean
+    private ModelMapper modelMapper;
+
+    private  SpaceshipDto spaceshipDto1;
+    private  SpaceshipDto spaceshipDto2;
+    private int page = 0;
+    private int size = 10;
+    private String token = "Bearer test_token";
+
 
     @BeforeEach
-    void setUp() {
-        spaceship = new Spaceship(1L, "Discovery One", "A Space Odyssey");
+    void setUp() throws ServletException, IOException {
 
-        spaceshipList = new ArrayList<>();
-        spaceshipList.add(new Spaceship(2L, "Millennium Falcon", "Star Wars"));
-        spaceshipList.add(new Spaceship(3L, "Serenity", "Firefly"));
-        spaceshipList.add(new Spaceship(4L, "Eagle 5", "Spaceballs"));
+        spaceshipDto1 = SpaceshipDto.builder()
+                .id(1L)
+                .name("Millennium Falcon")
+                .series("Star Wars")
+                .build();
 
-        pageable = PageRequest.of(0, 10);
+        spaceshipDto2 = SpaceshipDto.builder()
+                .id(4L)
+                .name("USS Enterprise (NCC-1701)")
+                .series("Star Trek")
+                .build();
     }
 
     @Test
-    public void testGetAllSpaceships_Returns_Empty() throws Exception {
+    @WithMockUser(authorities = {"ROLE_ADMIN"})
+    void testGetAllSpaceships_Returns_Results() {
 
-        Page<Spaceship> spaceshipsPage = new PageImpl<>(List.of(new Spaceship(), new Spaceship()));
-        when(spaceshipService.findAll(pageable)).thenReturn(spaceshipsPage);
+        Page<SpaceshipDto> spaceshipPage = new PageImpl<>(Arrays.asList(spaceshipDto1, spaceshipDto2), PageRequest.of(page, size), 2);
 
-        MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders.get("/api/spaceship/spaceships")
-                        .header("Authorization", "Bearer your-token")
-                        .param("page", "0")
-                        .param("size", "10")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andReturn().getResponse();
+        when(spaceshipService.findAll(PageRequest.of(page, size))).thenReturn(spaceshipPage);
 
+        Page<SpaceshipDto> result = spaceshipController.getAllSpaceships(token, page, size);
 
-        assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals(MediaType.APPLICATION_JSON_VALUE, response.getContentType());
+        assertNotNull(result);
+        assertEquals(2, result.getTotalElements());
+        assertEquals(spaceshipDto1, result.getContent().get(0));
+
+        verify(spaceshipService, times(1)).findAll(PageRequest.of(page, size));
     }
 
     @Test
-    public void testGetAllSpaceships_Returns_Results() throws Exception {
+    @WithMockUser(authorities = {"ROLE_ADMIN"})
+    void testGetAllSpaceships_Throws_ResourceNotFoundException() {
 
-        Page<Spaceship> spaceshipsPage = new PageImpl<>(spaceshipList, pageable, spaceshipList.size());
+        when(spaceshipService.findAll(PageRequest.of(page, size))).thenThrow(new ResourceNotFoundException("No spaceships found"));
 
-        when(spaceshipService.findAll(pageable)).thenReturn(spaceshipsPage);
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            spaceshipController.getAllSpaceships(token, page, size);
+        });
 
-        MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders.get("/api/spaceship/spaceships")
-                        .header("Authorization", "Bearer your-token")
-                        .param("page", "0")
-                        .param("size", "10")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andReturn().getResponse();
+        assertEquals("No spaceships found", exception.getMessage());
 
-        objectMapper = new ObjectMapper();
-        JsonNode jsonContent = objectMapper.readTree(response.getContentAsString());
-        int result = jsonContent.get("content").size();
+        verify(spaceshipService, times(1)).findAll(PageRequest.of(page, size));
 
-        assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals(MediaType.APPLICATION_JSON_VALUE, response.getContentType());
-        assertEquals(3, result);
     }
-
-
-
     @Test
-    public void testGetSpaceshipById_Returns_Results() {
+    void testGetAllSpaceships_WithoutAdminRole_ReturnsForbidden() throws Exception {
 
-        Long id = 1L;
+        UserDetails user = User.withUsername("user")
+                .password("password")
+                .roles("USER")
+                .build();
 
-        Spaceship expectedSpaceship = spaceship;
+        SecurityContext context = new SecurityContextImpl();
+        context.setAuthentication(new UsernamePasswordAuthenticationToken(user, user.getPassword(), user.getAuthorities()));
+        TestSecurityContextHolder.setContext(context);
 
-        when(spaceshipService.findById(id)).thenReturn(expectedSpaceship);
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
+            spaceshipController.getAllSpaceships(token, page, size);
+        });
 
-        Spaceship response = spaceshipController.getSpaceshipById(id);
+        assertTrue(exception.getMessage().contains("Access Denied"));
 
-        assertEquals(expectedSpaceship, response);
+        verify(spaceshipService, times(0)).findAll(PageRequest.of(page, size));
 
     }
 
     @Test
-    public void testGetSpaceshipById_NotFound() throws Exception {
+    void testGetAllSpaceships_WitAdminRole_ReturnsOk() throws Exception {
 
-        Long spaceshipId = 2555L;
+        UserDetails user = User.withUsername("user")
+                .password("password")
+                .roles("ADMIN")
+                .build();
+
+        SecurityContext context = new SecurityContextImpl();
+        context.setAuthentication(new UsernamePasswordAuthenticationToken(user, user.getPassword(), user.getAuthorities()));
+        TestSecurityContextHolder.setContext(context);
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        when(spaceshipService.findAll(pageable)).thenReturn(new PageImpl<>(Collections.emptyList(), pageable, 0));
+
+        Page<SpaceshipDto> result = spaceshipController.getAllSpaceships("Bearer test_token", page, size);
+
+        assertTrue(result.isEmpty());
+
+        verify(spaceshipService, times(1)).findAll(pageable);
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_USER"})
+    void testGetSpaceshipById_Returns_Result() {
+
+        Long spaceshipId = 1L;
+
+        when(spaceshipService.findById(spaceshipId)).thenReturn(spaceshipDto1);
+
+        SpaceshipDto result = spaceshipController.getSpaceshipById(token, spaceshipId);
+
+        assertNotNull(result);
+        assertEquals(spaceshipDto1.getId(), result.getId());
+
+        verify(spaceshipService, times(1)).findById(spaceshipId);
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_USER"})
+    void testGetSpaceshipById_NotFound_ThrowsException() {
+
+        Long spaceshipId = 1L;
 
         when(spaceshipService.findById(spaceshipId)).thenThrow(new ResourceNotFoundException("Spaceship not found with ID: " + spaceshipId));
 
-        mockMvc.perform(get("/api/spaceship/{id}", spaceshipId)
-                        .header("Authorization", "Bearer your-token")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Spaceship not found with ID: " + spaceshipId));
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            spaceshipController.getSpaceshipById(token, spaceshipId);
+        });
+
+        String expectedMessage = "Spaceship not found with ID: " + spaceshipId;
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
+
+        verify(spaceshipService, times(1)).findById(spaceshipId);
     }
 
     @Test
-    public void testSearchSpaceshipsByName_Returns_Empty() throws Exception {
+    @WithMockUser(authorities = {"ROLE_USER"})
+    void testSearchSpaceshipsByName_Returns_Results() {
 
-        final String name = "Discovery";
-        Page<Spaceship> spaceshipsPage = new PageImpl<>(new ArrayList<>());
-        when(spaceshipService.findByNameContainingIgnoreCase(name, pageable)).thenReturn(spaceshipsPage);
+        String name = "Falcon";
 
-        MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders.get("/api/spaceship/search")
-                        .header("Authorization", "Bearer your-token")
-                        .param("name", name)
-                        .param("page", "0")
-                        .param("size", "10")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andReturn().getResponse();
+        Pageable pageable = PageRequest.of(page, size);
+        Page<SpaceshipDto> spaceshipPage = new PageImpl<>(Arrays.asList(spaceshipDto1, spaceshipDto2), pageable, 2);
 
+        when(spaceshipService.findByNameContainingIgnoreCase(name, pageable)).thenReturn(spaceshipPage);
 
-        objectMapper = new ObjectMapper();
-        JsonNode jsonContent = objectMapper.readTree(response.getContentAsString());
-        int result = jsonContent.get("content").size();
+        Page<SpaceshipDto> result = spaceshipController.searchSpaceshipsByName(token, name, page, size);
 
-        assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals(MediaType.APPLICATION_JSON_VALUE, response.getContentType());
-        assertEquals(0, result);
+        assertNotNull(result);
+        assertEquals(2, result.getTotalElements());
+        assertEquals(spaceshipDto1.getName(), result.getContent().get(0).getName());
+        assertEquals(spaceshipDto2.getName(), result.getContent().get(1).getName());
+
+        verify(spaceshipService, times(1)).findByNameContainingIgnoreCase(name, pageable);
     }
 
     @Test
-    public void testSearchSpaceshipsByName_Returns_Results() throws Exception {
+    @WithMockUser(authorities = {"ROLE_USER"})
+    void testSearchSpaceshipsByName_NotFound_ThrowsException() {
 
-        final String name = "Eagle";
-        Page<Spaceship> spaceshipsPage = new PageImpl<>(spaceshipList);
-        when(spaceshipService.findByNameContainingIgnoreCase(name, pageable)).thenReturn(spaceshipsPage);
+        String name = "Unknown";
 
-        MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders.get("/api/spaceship/search")
-                        .header("Authorization", "Bearer your-token")
-                        .param("name", name)
-                        .param("page", "0")
-                        .param("size", "10")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andReturn().getResponse();
+        Pageable pageable = PageRequest.of(page, size);
 
+        when(spaceshipService.findByNameContainingIgnoreCase(name, pageable))
+                .thenThrow(new ResourceNotFoundException("No spaceships found"));
 
-        objectMapper = new ObjectMapper();
-        JsonNode jsonContent = objectMapper.readTree(response.getContentAsString());
-        JsonNode result = jsonContent.get("content").get(2);
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            spaceshipController.searchSpaceshipsByName(token, name, page, size);
+        });
 
-        assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals(MediaType.APPLICATION_JSON_VALUE, response.getContentType());
-        assertEquals("Eagle 5", result.get("name").asText());
+        String expectedMessage = "No spaceships found";
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
 
+        verify(spaceshipService, times(1)).findByNameContainingIgnoreCase(name, pageable);
     }
 
     @Test
-    public void testCreateSpaceship_Success() {
+    @WithMockUser(authorities = {"ROLE_ADMIN"})
+    void testCreateSpaceship_ReturnsCreatedSpaceship() {
 
-        com.w2m.spaceships.dtos.SpaceshipDto spaceshipDto = new com.w2m.spaceships.dtos.SpaceshipDto();
-        spaceshipDto.setName("Discovery One");
-        spaceshipDto.setSeries("A Space Odyssey");
+        when(spaceshipService.createSpaceship(spaceshipDto1)).thenReturn(spaceshipDto1);
 
-        when(spaceshipService.createSpaceship(any(com.w2m.spaceships.dtos.SpaceshipDto.class))).thenReturn(this.spaceship);
+        SpaceshipDto result = spaceshipController.createSpaceship(token, spaceshipDto1);
 
-        Spaceship createdSpaceship = spaceshipController.createSpaceship(spaceshipDto);
+        assertNotNull(result);
+        assertEquals(spaceshipDto1.getName(), result.getName());
+        assertEquals(spaceshipDto1.getSeries(), result.getSeries());
 
-        assertNotNull(createdSpaceship);
-        assertEquals("Discovery One", createdSpaceship.getName());
-        assertEquals("A Space Odyssey", createdSpaceship.getSeries());
+        verify(spaceshipService, times(1)).createSpaceship(spaceshipDto1);
     }
 
     @Test
-    public void testDeleteSpaceship_Success() {
+    @WithMockUser(authorities = {"ROLE_ADMIN"})
+    void testUpdateSpaceship_ReturnsUpdatedSpaceship() {
 
-        Long id = 1L;
+        Long spaceshipId = 1L;
 
-        when(spaceshipService.findById(id)).thenReturn(spaceship);
+        when(spaceshipService.updateSpaceship(spaceshipId, spaceshipDto1)).thenReturn(spaceshipDto1);
 
-        assertDoesNotThrow(() -> spaceshipController.deleteSpaceship(id));
+        SpaceshipDto result = spaceshipController.updateSpaceship(token, spaceshipId, spaceshipDto1);
+
+        assertNotNull(result);
+        assertEquals(spaceshipDto1.getName(), result.getName());
+        assertEquals(spaceshipDto1.getSeries(), result.getSeries());
+
+        verify(spaceshipService, times(1)).updateSpaceship(spaceshipId, spaceshipDto1);
     }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_ADMIN"})
+    void testUpdateSpaceship_NotFound_ThrowsException() {
+
+        Long spaceshipId = 1L;
+
+        SpaceshipDto invalidSpaceshipDto = SpaceshipDto.builder()
+                            .name(null)
+                            .series(null)
+                            .build();
+
+        doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid data"))
+                .when(spaceshipService).updateSpaceship(spaceshipId, invalidSpaceshipDto);
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+            spaceshipController.updateSpaceship(token, spaceshipId, invalidSpaceshipDto);
+        });
+
+        String expectedMessage = "Invalid data";
+        String actualMessage = exception.getReason();
+        assertTrue(actualMessage.contains(expectedMessage));
+
+        verify(spaceshipService, times(1)).updateSpaceship(spaceshipId, invalidSpaceshipDto);
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_ADMIN"})
+    void testDeleteSpaceship_DeletesSpaceship() {
+
+        Long spaceshipId = 1L;
+
+        doNothing().when(spaceshipService).deleteSpaceship(spaceshipId);
+
+        spaceshipController.deleteSpaceship(token, spaceshipId);
+
+        verify(spaceshipService, times(1)).deleteSpaceship(spaceshipId);
+    }
+
 }
