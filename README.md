@@ -12,12 +12,12 @@ The challenge World2Meet application for the maintenance of spaceships from seri
 
 **Spaceship endpoints :**
 
-1. **GET**: `/spaceships` Retrieves a list of all spaceships with pagination.
-2. **GET**: `/{id}` Retrieves a spaceship by its ID.
-3. **GET**: `/search` Search for spaceships by name.
-4. **POST**: `/spaceship` Create a new spaceship.
-5. **PUT**: `/{id}` Updates an existing spaceship.
-6. **DELETE**: `/{id}` Delete a spaceship.
+1. **GET**: `/spaceships` Retrieves a list of all spaceships with pagination - ROLE_ADMIN.
+2. **GET**: `/{id}` Retrieves a spaceship by its ID - ROLE_USER, ROLE_ADMIN.
+3. **GET**: `/search` Search for spaceships by name - ROLE_USER.
+4. **POST**: `/spaceship` Create a new spaceship - ROLE_ADMIN.
+5. **PUT**: `/{id}` Updates an existing spaceship - ROLE_ADMIN.
+6. **DELETE**: `/{id}` Delete a spaceship - ROLE_ADMIN.
 
 To run the application, follow these steps:
 
