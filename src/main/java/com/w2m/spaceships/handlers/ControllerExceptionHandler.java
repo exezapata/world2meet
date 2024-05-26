@@ -1,7 +1,7 @@
 package com.w2m.spaceships.handlers;
 
 import com.w2m.spaceships.exceptions.ErrorMessage;
-import org.apache.kafka.common.errors.ResourceNotFoundException;
+import com.w2m.spaceships.exceptions.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;

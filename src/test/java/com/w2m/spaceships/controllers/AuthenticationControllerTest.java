@@ -78,18 +78,18 @@ class AuthenticationControllerTest {
     }
 
     @Test
-    void testRegisterUser_UserServiceThrowsException_ReturnsInternalServerError() {
+    void testRegisterUser_UserService_Throws_ResourceNotFoundException() {
 
         UserDto existingUser = new UserDto();
         existingUser.setUsername("existingUser");
 
         when(userService.addUser(existingUser)).thenThrow(new ResourceNotFoundException("Username already exists: " + existingUser.getUsername()));
 
-        ResponseEntity<String> response = authenticationController.registerUser(existingUser);
+        ResourceNotFoundException thrown = assertThrows(ResourceNotFoundException.class, () -> {
+            authenticationController.registerUser(existingUser);
+        });
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertTrue(response.getBody().contains("Error registering user: Username already exists: " + existingUser.getUsername()));
-
+        assertEquals("Username already exists: " + existingUser.getUsername(), thrown.getMessage());
     }
 
     @Test
@@ -112,7 +112,7 @@ class AuthenticationControllerTest {
 
         when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Invalid credentials"));
 
-        AuthenticationException thrown = assertThrows(AuthenticationException.class, () -> {
+        ResourceNotFoundException thrown = assertThrows(ResourceNotFoundException.class, () -> {
             authenticationController.createAuthenticationToken(userDto);
         });
 
