@@ -28,34 +28,34 @@ class SpaceshipTest {
     }
 
     @Test
-    public void testEquals() {
+    void testEquals() {
         assertEquals(spaceship1, spaceship2);
     }
 
     @Test
-    public void testHashCode() {
+    void testHashCode() {
         assertEquals(spaceship1.hashCode(), spaceship2.hashCode());
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         assertEquals("Spaceship(id=1, name=Enterprise, series=NX-01)", spaceship1.toString());
     }
 
     @Test
-    public void testSetId() {
+    void testSetId() {
         Spaceship spaceship = new Spaceship(1L, "Discovery One", "A Space Odyssey");
 
         assertEquals(1L, spaceship.getId());
     }
 
     @Test
-    public void testCanEqual() {
+    void testCanEqual() {
         assertTrue(spaceship1.canEqual(spaceship2));
     }
 
     @Test
-    public void testCreateSpaceship() {
+    void testCreateSpaceship() {
 
         Spaceship spaceship = new Spaceship(1L, "Discovery One", "A Space Odyssey");
 

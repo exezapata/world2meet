@@ -1,5 +1,6 @@
 package com.w2m.spaceships.controllers;
 
+import com.w2m.spaceships.dtos.LoginRequestDto;
 import com.w2m.spaceships.dtos.UserDto;
 import com.w2m.spaceships.exceptions.ResourceNotFoundException;
 import com.w2m.spaceships.services.JwtService;
@@ -38,7 +39,7 @@ public class AuthenticationController {
 
     @Operation(summary = "Login a user")
     @PostMapping("/login")
-    public ResponseEntity<?> createAuthenticationToken(@RequestBody UserDto authenticationRequest) throws Exception {
+    public ResponseEntity<String> createAuthenticationToken(@Valid @RequestBody LoginRequestDto authenticationRequest) throws ResourceNotFoundException {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword())

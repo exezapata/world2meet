@@ -1,9 +1,12 @@
 package com.w2m.spaceships;
 
 
+import com.w2m.spaceships.repositories.SpaceshipRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -21,13 +24,17 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 })
 class SpaceshipsApplicationTests {
 
+	@Autowired
+	private ApplicationContext context;
+
 	@Test
 	void contextLoads() {
 		assertNotNull(SpaceshipsApplication.class);
 	}
 
 	@Test
-	public void testMainMethod() {
-		SpaceshipsApplication.main(new String[]{});
+	void testMainMethod() {
+		assertNotNull(context, "El contexto de la aplicación no debería ser nulo");
+		assertNotNull(context.getBean(SpaceshipRepository.class), "SpaceshipRepository bean debería estar presente");
 	}
 }

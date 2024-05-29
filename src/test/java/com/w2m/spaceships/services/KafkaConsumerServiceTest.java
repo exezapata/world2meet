@@ -32,7 +32,7 @@ class KafkaConsumerServiceTest {
     private String receivedMessage;
 
     @Test
-    public void testListen_Ok() throws InterruptedException {
+    void testListen_Ok() throws InterruptedException {
 
         String message = "Test message";
 

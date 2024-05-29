@@ -1,4 +1,4 @@
-package com.w2m.spaceships.configurators.kafkaConfig;
+package com.w2m.spaceships.configurators.kafkaconfig;
 
 import com.w2m.spaceships.utils.Constants;
 import org.apache.kafka.clients.admin.NewTopic;

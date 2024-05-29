@@ -27,7 +27,7 @@ class UserDetailsServiceImplTest {
     private UserRepository userRepository;
 
     @Test
-    public void testLoadUserByUsername_ExistingUser_ReturnsUserDetails() {
+    void testLoadUserByUsername_ExistingUser_ReturnsUserDetails() {
 
         Role roleAdmin = Role.builder()
                 .id(1L)
@@ -49,7 +49,7 @@ class UserDetailsServiceImplTest {
     }
 
     @Test
-    public void testLoadUserByUsername_NonExistingUser_ThrowsException() {
+    void testLoadUserByUsername_NonExistingUser_ThrowsException() {
 
         String username = "nonexistinguser";
 

@@ -21,17 +21,17 @@ class SpaceshipTest {
     }
 
     @Test
-    public void testEquals() {
+    void testEquals() {
         assertEquals(spaceshipDto1, spaceshipDto2);
     }
 
     @Test
-    public void testHashCode() {
+    void testHashCode() {
         assertEquals(spaceshipDto1.hashCode(), spaceshipDto2.hashCode());
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
 
         SpaceshipDto spaceshipDtoNew = SpaceshipDto.builder()
                 .id(1L)
@@ -43,12 +43,12 @@ class SpaceshipTest {
     }
 
     @Test
-    public void testSetId() {
+    void testSetId() {
         assertEquals(1L, spaceshipDto1.getId());
     }
 
     @Test
-    public void testCanEqual() {
+    void testCanEqual() {
         assertTrue(spaceshipDto1.canEqual(spaceshipDto2));
     }
 

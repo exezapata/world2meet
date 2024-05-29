@@ -1,4 +1,4 @@
-package com.w2m.spaceships.configurators.kafkaConfig;
+package com.w2m.spaceships.configurators.kafkaconfig;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;

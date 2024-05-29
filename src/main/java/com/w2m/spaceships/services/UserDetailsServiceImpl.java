@@ -20,7 +20,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws ResourceNotFoundException {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+                .orElseThrow(() -> {
+                    StringBuilder message = new StringBuilder();
+                    message.append("User not found: ").append(username);
+                    return new ResourceNotFoundException(message.toString());
+                });
         return new UserMain(user);
     }
 

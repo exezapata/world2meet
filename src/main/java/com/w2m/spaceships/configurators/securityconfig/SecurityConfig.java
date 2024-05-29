@@ -1,4 +1,4 @@
-package com.w2m.spaceships.configurators.securityConfig;
+package com.w2m.spaceships.configurators.securityconfig;
 
 import com.w2m.spaceships.filters.JwtFilter;
 import com.w2m.spaceships.repositories.UserRepository;

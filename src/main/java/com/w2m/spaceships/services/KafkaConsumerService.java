@@ -11,7 +11,7 @@ public class KafkaConsumerService {
 
     @KafkaListener(topics = Constants.TOPIC_NAME_SPACESHIP_EVENTS, groupId = Constants.SPACESHIP_GROUP)
     public void listen(String message) {
-       log.info("This is a message received on KAFKA CONSUMER:  " + message);
+        log.info("This is a message received on KAFKA CONSUMER: {}", message);
     }
 
 }

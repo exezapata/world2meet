@@ -30,7 +30,9 @@ public class UserService {
 
     public User addUser(UserDto userDto) {
         if (userRepository.existsByUsername(userDto.getUsername())) {
-            throw new ResourceNotFoundException("Username already exists: " + userDto.getUsername());
+            StringBuilder messageBuilder = new StringBuilder();
+            messageBuilder.append("Username already exists: ").append(userDto.getUsername());
+            throw new ResourceNotFoundException(messageBuilder.toString());
         }
         try {
             userDto.setPassword(passwordEncoder.encode(userDto.getPassword()));
@@ -40,7 +42,9 @@ public class UserService {
             for (RoleDto roleDto : userDto.getRoles()) {
                 Optional<Role> role = roleRepository.findByName(roleDto.getName());
                 if (!role.isPresent()) {
-                    throw new ResourceNotFoundException("Role not found: " + roleDto.getName());
+                    StringBuilder messageBuilder = new StringBuilder();
+                    messageBuilder.append("Role not found: ").append(roleDto.getName());
+                    throw new ResourceNotFoundException(messageBuilder.toString());
                 }
                 roles.add(role.get());
             }
@@ -48,7 +52,9 @@ public class UserService {
 
             return userRepository.save(user);
         } catch (DataAccessException ex) {
-            throw new ResourceNotFoundException("Error creating user" + ex);
+            StringBuilder messageBuilder = new StringBuilder();
+            messageBuilder.append("Error creating user: ").append(ex);
+            throw new ResourceNotFoundException(messageBuilder.toString());
         }
     }
 }

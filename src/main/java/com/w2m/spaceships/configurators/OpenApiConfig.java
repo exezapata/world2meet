@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import static com.w2m.spaceships.utils.Constants.BEARER_JWT;
+
 @Configuration
 public class OpenApiConfig implements WebMvcConfigurer {
 
@@ -22,13 +24,13 @@ public class OpenApiConfig implements WebMvcConfigurer {
                         .version("1.0")
                         .license(new License().name("Apache 2.0").url("http://springdoc.org")))
                 .components(new io.swagger.v3.oas.models.Components()
-                        .addSecuritySchemes("bearer-jwt", new SecurityScheme()
+                        .addSecuritySchemes(BEARER_JWT, new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
                                 .in(io.swagger.v3.oas.models.security.SecurityScheme.In.HEADER)
                                 .name("Authorization")))
-                .addSecurityItem(new SecurityRequirement().addList("bearer-jwt", "bearer-jwt"));
+                .addSecurityItem(new SecurityRequirement().addList(BEARER_JWT));
     }
 
     @Override

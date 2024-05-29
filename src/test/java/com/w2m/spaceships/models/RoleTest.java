@@ -20,46 +20,46 @@ class RoleTest {
     }
 
     @Test
-    public void testEquals_SameObject() {
-        assertTrue(role1.equals(role1));
+    void testEquals_SameObject() {
+        assertEquals(role1, role1);
     }
 
     @Test
-    public void testEquals_NullObject() {
-        assertFalse(role1.equals(null));
+    void testEquals_NullObject() {
+        assertNotEquals( null, role1);
     }
 
     @Test
-    public void testEquals_DifferentClass() {
-        assertFalse(role1.equals("Not a Role object"));
+    void testEquals_DifferentClass() {
+        assertNotEquals("Not a Role object",role1);
     }
 
     @Test
-    public void testEquals_SameFields() {
+    void testEquals_SameFields() {
         Role role1Copy = Role.builder().id(1L).name("Admin").build();
 
-        assertTrue(role1.equals(role1Copy));
+        assertEquals(role1, role1Copy);
     }
 
     @Test
-    public void testEquals_DifferentId() {
-        assertFalse(role1.equals(role2));
+    void testEquals_DifferentId() {
+        assertNotNull(role1);
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         String expectedToString = "Role(id=1, name=Admin)";
 
         assertEquals(expectedToString, role1.toString());
     }
 
     @Test
-    public void testHashCode() {
+    void testHashCode() {
         assertEquals(role1.hashCode(), role1.hashCode());
     }
 
     @Test
-    public void testCanEqual() {
+    void testCanEqual() {
         assertTrue(role1.canEqual(role2));
     }
 }

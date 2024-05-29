@@ -24,19 +24,19 @@ class ErrorMessageTest {
     }
 
     @Test
-    public void testEquals() {
+    void testEquals() {
         assertEquals(error1, error2);
         assertNotEquals(error1, error3);
     }
 
     @Test
-    public void testHashCode() {
+    void testHashCode() {
         assertEquals(error1.hashCode(), error2.hashCode());
         assertNotEquals(error1.hashCode(), error3.hashCode());
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         Date timestamp = new Date();
         ErrorMessage error = ErrorMessage.builder()
                 .statusCode(11)
@@ -52,12 +52,12 @@ class ErrorMessageTest {
     }
 
     @Test
-    public void testSetStatusCode() {
+    void testSetStatusCode() {
         assertEquals(404, error1.getStatusCode());
     }
 
     @Test
-    public void testSetTimestamp() {
+    void testSetTimestamp() {
         Date timestamp = new Date();
         error1.setTimestamp(timestamp);
 
@@ -65,21 +65,21 @@ class ErrorMessageTest {
     }
 
     @Test
-    public void testSetMessage() {
+    void testSetMessage() {
         error1.setMessage("Test Message");
 
         assertEquals("Test Message", error1.getMessage());
     }
 
     @Test
-    public void testSetDescription() {
+    void testSetDescription() {
         error1.setDescription("Test Description");
 
         assertEquals("Test Description", error1.getDescription());
     }
 
     @Test
-    public void testCanEqual() {
+    void testCanEqual() {
         ErrorMessage error = ErrorMessage.builder()
                 .statusCode(404)
                 .timestamp(new Date())

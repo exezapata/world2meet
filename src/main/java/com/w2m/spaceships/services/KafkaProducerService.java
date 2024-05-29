@@ -14,7 +14,7 @@ public class KafkaProducerService {
     private final KafkaTemplate<String, String> kafkaTemplate;
 
     public void produce(String message){
-        log.info(String.format("Message sent -> %s", message));
+        log.info("Message sent -> {}", message);
         kafkaTemplate.send(Constants.TOPIC_NAME_SPACESHIP_EVENTS, message);
     }
 

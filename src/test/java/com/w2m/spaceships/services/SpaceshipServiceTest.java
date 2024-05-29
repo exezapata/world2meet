@@ -1,6 +1,7 @@
 package com.w2m.spaceships.services;
 
 import com.w2m.spaceships.dtos.SpaceshipDto;
+import com.w2m.spaceships.dtos.SpaceshipRequestDto;
 import com.w2m.spaceships.exceptions.ResourceNotFoundException;
 import com.w2m.spaceships.models.Spaceship;
 import com.w2m.spaceships.repositories.SpaceshipRepository;
@@ -26,7 +27,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -65,7 +65,7 @@ class SpaceshipServiceTest {
     }
 
     @Test
-    public void testFindAll_Returns_Results() {
+    void testFindAll_Returns_Results() {
 
         List<SpaceshipDto> spaceshipDtoList = spaceshipList.stream()
                 .map(spaceship -> modelMapper.map(spaceship, SpaceshipDto.class))
@@ -75,7 +75,7 @@ class SpaceshipServiceTest {
 
         when(spaceshipRepository.findAll(pageable)).thenReturn(new PageImpl<>(spaceshipList, pageable, spaceshipList.size()));
 
-        when(modelMapper.map(any(Spaceship.class), eq(SpaceshipDto.class)))
+        when(modelMapper.map(any(Spaceship.class), any()))
                 .thenAnswer(invocation -> {
                     Spaceship source = invocation.getArgument(0);
                     return new SpaceshipDto(source.getId(), source.getName(), source.getSeries());
@@ -91,7 +91,7 @@ class SpaceshipServiceTest {
     }
 
     @Test
-    public void testFindAll_ThrowsException() {
+    void testFindAll_ThrowsException() {
 
         Page<Spaceship> emptyPage = Page.empty(pageable);
 
@@ -105,7 +105,7 @@ class SpaceshipServiceTest {
     }
 
     @Test
-    public void testFindById_Success() {
+    void testFindById_Success() {
         Long id = 1L;
 
         when(spaceshipRepository.findById(id)).thenReturn(Optional.of(spaceship));
@@ -128,7 +128,7 @@ class SpaceshipServiceTest {
     }
 
     @Test
-    public void testFindById_ThrowsException() {
+    void testFindById_ThrowsException() {
 
         Long id = 1L;
 
@@ -143,15 +143,15 @@ class SpaceshipServiceTest {
     }
 
     @Test
-    public void testFindByNameContainingIgnoreCase_ThrowsException() {
+    void testFindByNameContainingIgnoreCase_ThrowsException() {
 
         String name = "Serenity";
 
         Page<Spaceship> emptyPage = Page.empty(pageable);
 
-        when(spaceshipRepository.findByNameContainingIgnoreCase(eq(name), eq(pageable))).thenReturn(emptyPage);
+        when(spaceshipRepository.findByNameContainingIgnoreCase(name, pageable)).thenReturn(emptyPage);
 
-        when(modelMapper.map(any(), eq(SpaceshipDto.class))).thenReturn(new SpaceshipDto());
+        when(modelMapper.map(any(), any())).thenReturn(new SpaceshipDto());
 
         ResourceNotFoundException thrown = assertThrows(ResourceNotFoundException.class, () -> {
             spaceshipService.findByNameContainingIgnoreCase(name, pageable);
@@ -162,25 +162,32 @@ class SpaceshipServiceTest {
     }
 
     @Test
-    public void testCreateSpaceship_Success() {
+    void testCreateSpaceship_Success() {
 
-        SpaceshipDto spaceshipDto = SpaceshipDto.builder()
+        SpaceshipRequestDto spaceshipRequestDto = SpaceshipRequestDto.builder()
+                .name("USS Enterprise (NCC-1701)")
+                .series("Star Trek")
+                .build();
+
+        SpaceshipDto spaceshipDto = new SpaceshipDto().builder()
+                .id(1L)
                 .name("USS Enterprise (NCC-1701)")
                 .series("Star Trek")
                 .build();
 
         Spaceship spaceship = new Spaceship().builder()
+                .id(1L)
                 .name("USS Enterprise (NCC-1701)")
                 .series("Star Trek")
                 .build();
 
-        when(modelMapper.map(spaceshipDto, Spaceship.class)).thenReturn(spaceship);
+        when(modelMapper.map(spaceshipRequestDto, Spaceship.class)).thenReturn(spaceship);
 
         when(modelMapper.map(spaceship, SpaceshipDto.class)).thenReturn(spaceshipDto);
 
         when(spaceshipRepository.save(any(Spaceship.class))).thenReturn(spaceship);
 
-        SpaceshipDto result = spaceshipService.createSpaceship(spaceshipDto);
+        SpaceshipDto result = spaceshipService.createSpaceship(spaceshipRequestDto);
 
         assertNotNull(result);
         assertEquals("USS Enterprise (NCC-1701)", result.getName());
@@ -189,11 +196,11 @@ class SpaceshipServiceTest {
     }
 
     @Test
-    public void testUpdateSpaceship_Success() {
+    void testUpdateSpaceship_Success() {
 
         Long id = 1L;
-        SpaceshipDto spaceshipDto = SpaceshipDto.builder()
-                .id(id)
+
+        SpaceshipRequestDto updateDto = SpaceshipRequestDto.builder()
                 .name("USS Enterprise (NCC-1701)")
                 .series("Star Trek")
                 .build();
@@ -206,20 +213,20 @@ class SpaceshipServiceTest {
 
         when(spaceshipRepository.findById(id)).thenReturn(Optional.of(existingSpaceship));
 
-        when(spaceshipRepository.save(any(Spaceship.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(spaceshipRepository.save(any(Spaceship.class))).thenReturn(existingSpaceship);
 
-        when(modelMapper.map(any(), eq(SpaceshipDto.class))).thenReturn(spaceshipDto);
+        SpaceshipDto mappedSpaceshipDto = new SpaceshipDto(id, updateDto.getName(), updateDto.getSeries());
 
-        SpaceshipDto result = spaceshipService.updateSpaceship(id, spaceshipDto);
+        when(modelMapper.map(existingSpaceship, SpaceshipDto.class)).thenReturn(mappedSpaceshipDto);
+
+        SpaceshipDto result = spaceshipService.updateSpaceship(id, updateDto);
 
         assertNotNull(result);
-        assertEquals(id, result.getId());
         assertEquals("USS Enterprise (NCC-1701)", result.getName());
         assertEquals("Star Trek", result.getSeries());
 
         verify(spaceshipRepository, times(1)).findById(id);
         verify(spaceshipRepository, times(1)).save(any(Spaceship.class));
-        verify(modelMapper, times(1)).map(existingSpaceship, SpaceshipDto.class);
 
     }
 

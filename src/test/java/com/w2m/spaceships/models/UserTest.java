@@ -30,43 +30,43 @@ class UserTest {
     }
 
     @Test
-    public void testEquals() {
+    void testEquals() {
         assertEquals(user1, user2);
     }
 
     @Test
-    public void testHashCode() {
+    void testHashCode() {
         assertEquals(user1.hashCode(), user2.hashCode());
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         assertNotNull(user1.toString());
     }
 
     @Test
-    public void testBuilder() {
+    void testBuilder() {
         User user = User.builder().id(1L).username("username").password("password").build();
 
         assertNotNull(user);
     }
 
     @Test
-    public void testSetId() {
+    void testSetId() {
         user1.setId(1L);
 
         assertEquals(1L, user1.getId());
     }
 
     @Test
-    public void testCanEqual() {
+    void testCanEqual() {
         User user3 = new User();
 
         assertTrue(user1.canEqual(user3));
     }
 
     @Test
-    public void testCreateUser() {
+    void testCreateUser() {
 
         User user = new User();
         user.setUsername("username");

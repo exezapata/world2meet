@@ -30,17 +30,17 @@ class UserMainTest {
     }
 
     @Test
-    public void getUsername_ReturnsCorrectUsername() {
+    void getUsername_ReturnsCorrectUsername() {
         assertEquals("username", userMain.getUsername());
     }
 
     @Test
-    public void getPassword_ReturnsCorrectPassword() {
+    void getPassword_ReturnsCorrectPassword() {
         assertEquals("password", userMain.getPassword());
     }
 
     @Test
-    public void getAuthorities_ReturnsSingleUserRole() {
+    void getAuthorities_ReturnsSingleUserRole() {
         Set<SimpleGrantedAuthority> authorities = (Set<SimpleGrantedAuthority>) userMain.getAuthorities();
 
         assertEquals(1, authorities.size());
@@ -48,22 +48,22 @@ class UserMainTest {
     }
 
     @Test
-    public void isAccountNonExpired_ReturnsTrue() {
+    void isAccountNonExpired_ReturnsTrue() {
         assertTrue(userMain.isAccountNonExpired());
     }
 
     @Test
-    public void isAccountNonLocked_ReturnsTrue() {
+    void isAccountNonLocked_ReturnsTrue() {
         assertTrue(userMain.isAccountNonLocked());
     }
 
     @Test
-    public void isCredentialsNonExpired_ReturnsTrue() {
+    void isCredentialsNonExpired_ReturnsTrue() {
         assertTrue(userMain.isCredentialsNonExpired());
     }
 
     @Test
-    public void isEnabled_ReturnsTrue() {
+    void isEnabled_ReturnsTrue() {
         assertTrue(userMain.isEnabled());
     }
 }

@@ -2,6 +2,7 @@ package com.w2m.spaceships.controllers;
 
 import com.w2m.spaceships.dtos.SpaceshipDto;
 
+import com.w2m.spaceships.dtos.SpaceshipRequestDto;
 import com.w2m.spaceships.exceptions.ResourceNotFoundException;
 import com.w2m.spaceships.filters.JwtFilter;
 import com.w2m.spaceships.repositories.SpaceshipRepository;
@@ -78,10 +79,12 @@ class SpaceshipControllerTest {
 
     private  SpaceshipDto spaceshipDto1;
     private  SpaceshipDto spaceshipDto2;
+
+    private SpaceshipRequestDto spaceshipRequestDto1;
+
+    private SpaceshipRequestDto spaceshipRequestDto2;
     private int page = 0;
     private int size = 10;
-    private String token = "Bearer test_token";
-
 
     @BeforeEach
     void setUp() throws ServletException, IOException {
@@ -97,6 +100,16 @@ class SpaceshipControllerTest {
                 .name("USS Enterprise (NCC-1701)")
                 .series("Star Trek")
                 .build();
+
+        spaceshipRequestDto1 = SpaceshipRequestDto.builder()
+                .name("Millennium Falcon")
+                .series("Star Wars")
+                .build();
+
+        spaceshipRequestDto2 = SpaceshipRequestDto.builder()
+                .name("USS Enterprise (NCC-1701)")
+                .series("Star Trek")
+                .build();
     }
 
     @Test
@@ -107,7 +120,7 @@ class SpaceshipControllerTest {
 
         when(spaceshipService.findAll(PageRequest.of(page, size))).thenReturn(spaceshipPage);
 
-        Page<SpaceshipDto> result = spaceshipController.getAllSpaceships(token, page, size);
+        Page<SpaceshipDto> result = spaceshipController.getAllSpaceships(page, size);
 
         assertNotNull(result);
         assertEquals(2, result.getTotalElements());
@@ -120,13 +133,17 @@ class SpaceshipControllerTest {
     @WithMockUser(authorities = {"ROLE_ADMIN"})
     void testGetAllSpaceships_Throws_ResourceNotFoundException() {
 
-        when(spaceshipService.findAll(PageRequest.of(page, size))).thenThrow(new ResourceNotFoundException("No spaceships found"));
+        StringBuilder messageBuilder = new StringBuilder();
+        messageBuilder.append("No spaceships found");
+        String message = messageBuilder.toString();
+
+        when(spaceshipService.findAll(PageRequest.of(page, size))).thenThrow(new ResourceNotFoundException(message));
 
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            spaceshipController.getAllSpaceships(token, page, size);
+            spaceshipController.getAllSpaceships(page, size);
         });
 
-        assertEquals("No spaceships found", exception.getMessage());
+        assertEquals(message, exception.getMessage());
 
         verify(spaceshipService, times(1)).findAll(PageRequest.of(page, size));
 
@@ -144,7 +161,7 @@ class SpaceshipControllerTest {
         TestSecurityContextHolder.setContext(context);
 
         AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
-            spaceshipController.getAllSpaceships(token, page, size);
+            spaceshipController.getAllSpaceships(page, size);
         });
 
         assertTrue(exception.getMessage().contains("Access Denied"));
@@ -169,7 +186,7 @@ class SpaceshipControllerTest {
 
         when(spaceshipService.findAll(pageable)).thenReturn(new PageImpl<>(Collections.emptyList(), pageable, 0));
 
-        Page<SpaceshipDto> result = spaceshipController.getAllSpaceships("Bearer test_token", page, size);
+        Page<SpaceshipDto> result = spaceshipController.getAllSpaceships( page, size);
 
         assertTrue(result.isEmpty());
 
@@ -184,7 +201,7 @@ class SpaceshipControllerTest {
 
         when(spaceshipService.findById(spaceshipId)).thenReturn(spaceshipDto1);
 
-        SpaceshipDto result = spaceshipController.getSpaceshipById(token, spaceshipId);
+        SpaceshipDto result = spaceshipController.getSpaceshipById(spaceshipId);
 
         assertNotNull(result);
         assertEquals(spaceshipDto1.getId(), result.getId());
@@ -197,16 +214,18 @@ class SpaceshipControllerTest {
     void testGetSpaceshipById_NotFound_ThrowsException() {
 
         Long spaceshipId = 1L;
+        StringBuilder messageBuilder = new StringBuilder();
+        messageBuilder.append("Spaceship not found with ID: ").append(spaceshipId);
+        String message = messageBuilder.toString();
 
-        when(spaceshipService.findById(spaceshipId)).thenThrow(new ResourceNotFoundException("Spaceship not found with ID: " + spaceshipId));
+        when(spaceshipService.findById(spaceshipId)).thenThrow(new ResourceNotFoundException(message));
 
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            spaceshipController.getSpaceshipById(token, spaceshipId);
+            spaceshipController.getSpaceshipById(spaceshipId);
         });
 
-        String expectedMessage = "Spaceship not found with ID: " + spaceshipId;
         String actualMessage = exception.getMessage();
-        assertTrue(actualMessage.contains(expectedMessage));
+        assertTrue(actualMessage.contains(message));
 
         verify(spaceshipService, times(1)).findById(spaceshipId);
     }
@@ -222,7 +241,7 @@ class SpaceshipControllerTest {
 
         when(spaceshipService.findByNameContainingIgnoreCase(name, pageable)).thenReturn(spaceshipPage);
 
-        Page<SpaceshipDto> result = spaceshipController.searchSpaceshipsByName(token, name, page, size);
+        Page<SpaceshipDto> result = spaceshipController.searchSpaceshipsByName(name, page, size);
 
         assertNotNull(result);
         assertEquals(2, result.getTotalElements());
@@ -244,7 +263,7 @@ class SpaceshipControllerTest {
                 .thenThrow(new ResourceNotFoundException("No spaceships found"));
 
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            spaceshipController.searchSpaceshipsByName(token, name, page, size);
+            spaceshipController.searchSpaceshipsByName(name, page, size);
         });
 
         String expectedMessage = "No spaceships found";
@@ -258,15 +277,15 @@ class SpaceshipControllerTest {
     @WithMockUser(authorities = {"ROLE_ADMIN"})
     void testCreateSpaceship_ReturnsCreatedSpaceship() {
 
-        when(spaceshipService.createSpaceship(spaceshipDto1)).thenReturn(spaceshipDto1);
+        when(spaceshipService.createSpaceship(spaceshipRequestDto1)).thenReturn(spaceshipDto1);
 
-        SpaceshipDto result = spaceshipController.createSpaceship(token, spaceshipDto1);
+        SpaceshipDto result = spaceshipController.createSpaceship(spaceshipRequestDto1);
 
         assertNotNull(result);
         assertEquals(spaceshipDto1.getName(), result.getName());
         assertEquals(spaceshipDto1.getSeries(), result.getSeries());
 
-        verify(spaceshipService, times(1)).createSpaceship(spaceshipDto1);
+        verify(spaceshipService, times(1)).createSpaceship(spaceshipRequestDto1);
     }
 
     @Test
@@ -275,15 +294,16 @@ class SpaceshipControllerTest {
 
         Long spaceshipId = 1L;
 
-        when(spaceshipService.updateSpaceship(spaceshipId, spaceshipDto1)).thenReturn(spaceshipDto1);
 
-        SpaceshipDto result = spaceshipController.updateSpaceship(token, spaceshipId, spaceshipDto1);
+        when(spaceshipService.updateSpaceship(spaceshipId, spaceshipRequestDto1)).thenReturn(spaceshipDto1);
+
+        SpaceshipDto result = spaceshipController.updateSpaceship(spaceshipId, spaceshipRequestDto1);
 
         assertNotNull(result);
         assertEquals(spaceshipDto1.getName(), result.getName());
         assertEquals(spaceshipDto1.getSeries(), result.getSeries());
 
-        verify(spaceshipService, times(1)).updateSpaceship(spaceshipId, spaceshipDto1);
+        verify(spaceshipService, times(1)).updateSpaceship(spaceshipId, spaceshipRequestDto1);
     }
 
     @Test
@@ -292,7 +312,7 @@ class SpaceshipControllerTest {
 
         Long spaceshipId = 1L;
 
-        SpaceshipDto invalidSpaceshipDto = SpaceshipDto.builder()
+        SpaceshipRequestDto invalidSpaceshipDto = SpaceshipRequestDto.builder()
                             .name(null)
                             .series(null)
                             .build();
@@ -301,7 +321,7 @@ class SpaceshipControllerTest {
                 .when(spaceshipService).updateSpaceship(spaceshipId, invalidSpaceshipDto);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
-            spaceshipController.updateSpaceship(token, spaceshipId, invalidSpaceshipDto);
+            spaceshipController.updateSpaceship(spaceshipId, invalidSpaceshipDto);
         });
 
         String expectedMessage = "Invalid data";
@@ -319,7 +339,7 @@ class SpaceshipControllerTest {
 
         doNothing().when(spaceshipService).deleteSpaceship(spaceshipId);
 
-        spaceshipController.deleteSpaceship(token, spaceshipId);
+        spaceshipController.deleteSpaceship(spaceshipId);
 
         verify(spaceshipService, times(1)).deleteSpaceship(spaceshipId);
     }

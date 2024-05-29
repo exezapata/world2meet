@@ -10,7 +10,6 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -26,13 +25,14 @@ class KafkaProducerServiceTest {
 
 
     @Test
-    public void testSend_Ok() throws InterruptedException {
+    void testSend_Ok() throws InterruptedException {
 
         String message = "Test message";
 
         kafkaProducerService.produce(message);
 
-        verify(kafkaTemplate, times(1)).send(eq(Constants.TOPIC_NAME_SPACESHIP_EVENTS), eq(message));
+        verify(kafkaTemplate, times(1)).send(Constants.TOPIC_NAME_SPACESHIP_EVENTS, message);
     }
+
 
 }

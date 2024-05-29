@@ -1,5 +1,6 @@
 package com.w2m.spaceships.controllers;
 
+import com.w2m.spaceships.dtos.LoginRequestDto;
 import com.w2m.spaceships.dtos.UserDto;
 import com.w2m.spaceships.exceptions.AuthenticationException;
 import com.w2m.spaceships.exceptions.ResourceNotFoundException;
@@ -23,6 +24,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -52,8 +54,9 @@ class AuthenticationControllerTest {
     private AuthenticationManager authenticationManager;
 
     private UserDto userDto;
-
     private User user;
+
+    private LoginRequestDto loginRequestDto;
 
     @BeforeEach
     void setUp() {
@@ -64,6 +67,11 @@ class AuthenticationControllerTest {
         user = new User();
         user.setUsername("username");
         user.setPassword("password");
+
+        loginRequestDto = new LoginRequestDto();
+        loginRequestDto.setUsername("username");
+        loginRequestDto.setPassword("password");
+
     }
 
     @Test
@@ -83,13 +91,19 @@ class AuthenticationControllerTest {
         UserDto existingUser = new UserDto();
         existingUser.setUsername("existingUser");
 
-        when(userService.addUser(existingUser)).thenThrow(new ResourceNotFoundException("Username already exists: " + existingUser.getUsername()));
+        StringBuilder messageBuilder = new StringBuilder();
+        messageBuilder.append("Username already exists: ").append(existingUser.getUsername());
+        String message = messageBuilder.toString();
+
+        when(userRepository.existsByUsername(existingUser.getUsername())).thenReturn(true);
+
+        doThrow(new ResourceNotFoundException(message)).when(userService).addUser(existingUser);
 
         ResourceNotFoundException thrown = assertThrows(ResourceNotFoundException.class, () -> {
             authenticationController.registerUser(existingUser);
         });
 
-        assertEquals("Username already exists: " + existingUser.getUsername(), thrown.getMessage());
+        assertEquals(message, thrown.getMessage());
     }
 
     @Test
@@ -101,7 +115,7 @@ class AuthenticationControllerTest {
 
         when(jwtService.generateToken(userDto.getUsername())).thenReturn("test_token");
 
-        ResponseEntity<?> response = authenticationController.createAuthenticationToken(userDto);
+        ResponseEntity<String> response = authenticationController.createAuthenticationToken(loginRequestDto);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("test_token", response.getBody());
@@ -113,7 +127,7 @@ class AuthenticationControllerTest {
         when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Invalid credentials"));
 
         ResourceNotFoundException thrown = assertThrows(ResourceNotFoundException.class, () -> {
-            authenticationController.createAuthenticationToken(userDto);
+            authenticationController.createAuthenticationToken(loginRequestDto);
         });
 
         assertEquals("Incorrect username or password", thrown.getMessage());

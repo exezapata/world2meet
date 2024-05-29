@@ -18,11 +18,11 @@ public class RoleInitialization {
     private final RoleRepository roleRepository;
 
     @PostConstruct
-    public void init() throws ParseException {
+    public void init() {
         initializeRole();
     }
 
-    private void initializeRole() throws ParseException {
+    private void initializeRole() {
 
         Role roleAdmin = Role.builder()
                 .id(1L)
